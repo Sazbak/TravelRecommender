@@ -6,14 +6,14 @@ import com.example.travelrecommender.network.RecommendationApi
 import com.example.travelrecommender.network.RecommendationDto
 import com.example.travelrecommender.network.RecommendationNetwork
 import com.example.travelrecommender.network.RecommendationRequestDto
-import java.io.IOException
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.io.IOException
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 // Replace this development location when device location is introduced.
 internal object DevelopmentLocation {
@@ -29,7 +29,7 @@ sealed interface RecommendationState {
 }
 
 data class TravelPlannerUiState(
-    val request: String = "",
+    val travelRequest: String = "",
     val availableMinutes: Int? = null,
     val result: RecommendationState = RecommendationState.Idle
 )
@@ -41,21 +41,23 @@ class TravelPlannerViewModel(
     private val _uiState = MutableStateFlow(TravelPlannerUiState())
     val uiState = _uiState.asStateFlow()
 
-    fun updateRequest(request: String) {
+    fun updateTravelRequest(request: String) {
         if (_uiState.value.result is RecommendationState.Loading) return
-        _uiState.value = _uiState.value.copy(request = request, result = RecommendationState.Idle)
+        _uiState.value =
+            _uiState.value.copy(travelRequest = request, result = RecommendationState.Idle)
     }
 
     fun selectDuration(minutes: Int) {
         if (_uiState.value.result is RecommendationState.Loading) return
-        _uiState.value = _uiState.value.copy(availableMinutes = minutes, result = RecommendationState.Idle)
+        _uiState.value =
+            _uiState.value.copy(availableMinutes = minutes, result = RecommendationState.Idle)
     }
 
     fun findActivities() {
         val state = _uiState.value
         if (state.result is RecommendationState.Loading) return
         val validationError = when {
-            state.request.isBlank() -> "Describe what you feel like doing."
+            state.travelRequest.isBlank() -> "Describe what you feel like doing."
             state.availableMinutes == null -> "Choose how much time you have."
             else -> null
         }
@@ -73,25 +75,32 @@ class TravelPlannerViewModel(
                         longitude = DevelopmentLocation.longitude,
                         startDateTime = now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                         availableMinutes = requireNotNull(state.availableMinutes),
-                        request = state.request.trim()
+                        request = state.travelRequest.trim()
                     )
                 )
-                _uiState.value = state.copy(result = RecommendationState.Success(response.recommendations))
+                _uiState.value =
+                    state.copy(result = RecommendationState.Success(response.recommendations))
             } catch (cancelled: CancellationException) {
                 _uiState.value = state.copy(result = RecommendationState.Idle)
                 throw cancelled
             } catch (error: HttpException) {
-                _uiState.value = state.copy(result = RecommendationState.Error(
-                    "The server could not complete the request (HTTP ${error.code()}). Please try again."
-                ))
+                _uiState.value = state.copy(
+                    result = RecommendationState.Error(
+                        "The server could not complete the request (HTTP ${error.code()}). Please try again."
+                    )
+                )
             } catch (error: IOException) {
-                _uiState.value = state.copy(result = RecommendationState.Error(
-                    "Could not reach the server. Check your connection and that the local backend is running."
-                ))
+                _uiState.value = state.copy(
+                    result = RecommendationState.Error(
+                        "Could not reach the server. Check your connection and that the local backend is running."
+                    )
+                )
             } catch (error: Exception) {
-                _uiState.value = state.copy(result = RecommendationState.Error(
-                    "Something went wrong while loading activities. Please try again."
-                ))
+                _uiState.value = state.copy(
+                    result = RecommendationState.Error(
+                        "Something went wrong while loading activities. Please try again."
+                    )
+                )
             }
         }
     }

@@ -40,8 +40,8 @@ fun TravelPlannerScreen(
         item { Text("Travel Planner", style = MaterialTheme.typography.headlineMedium) }
         item {
             OutlinedTextField(
-                value = state.request,
-                onValueChange = viewModel::updateRequest,
+                value = state.travelRequest,
+                onValueChange = viewModel::updateTravelRequest,
                 label = { Text("What do you feel like doing?") },
                 minLines = 3,
                 enabled = !loading,

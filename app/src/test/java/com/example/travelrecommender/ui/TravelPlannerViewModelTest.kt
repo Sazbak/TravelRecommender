@@ -44,19 +44,19 @@ class TravelPlannerViewModelTest {
     @After fun tearDown() { Dispatchers.resetMain() }
 
     private fun ready(): TravelPlannerViewModel = TravelPlannerViewModel(api) { time }.apply {
-        updateRequest("  Scenic outdoors  ")
+        updateTravelRequest("  Scenic outdoors  ")
         selectDuration(180)
     }
 
     @Test fun `blank text and missing duration do not call backend`() = runTest(dispatcher) {
         val model = TravelPlannerViewModel(api) { time }
         assertEquals(RecommendationState.Idle, model.uiState.value.result)
-        model.updateRequest("   ")
+        model.updateTravelRequest("   ")
         model.selectDuration(60)
         model.findActivities()
         assertTrue(model.uiState.value.result is RecommendationState.Error)
         val missingDuration = TravelPlannerViewModel(api) { time }
-        missingDuration.updateRequest("Outdoors")
+        missingDuration.updateTravelRequest("Outdoors")
         missingDuration.findActivities()
         assertTrue(missingDuration.uiState.value.result is RecommendationState.Error)
         advanceUntilIdle()
@@ -89,7 +89,7 @@ class TravelPlannerViewModelTest {
     @Test fun `network failure allows retry with fresh submission time`() = runTest(dispatcher) {
         var currentTime = time
         val model = TravelPlannerViewModel(api) { currentTime }
-        model.updateRequest("Outdoors")
+        model.updateTravelRequest("Outdoors")
         model.selectDuration(60)
         respond = { throw IOException("offline") }
         model.findActivities()
